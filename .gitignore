@@ -1,3 +1,6 @@
 data/*
 *.class
-
+jars/*
+index/*
+*.pyc
+.DS_Store

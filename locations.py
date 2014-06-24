@@ -3,7 +3,7 @@ import subprocess
 from collections import Counter
 import os
 import json
-
+import nltk
 
 _dbase = {}
 
@@ -185,24 +185,40 @@ def load_db():
 
 
 def index_clusters():
-    for r,d,f2 in os.walk('clusters2'):
+    for r,d,f2 in os.walk('clusters3'):
         for fn in f2:
             print fn
-            f = open('clusters2/' + fn)
+            f = open('clusters3/' + fn)
             a = f.readlines()
-            b = ''
+            a  = a[:30]
+            words = {}
             for x in a:
-                b = b + x + ' '
+                x = x.lower()
+                b = nltk.word_tokenize(x)
+                y = nltk.pos_tag(b)
+                for z in y:
+                    if z[1] == 'NN' or z[1] == 'NNP':
+                        words.setdefault(z[0], 0)
+                        words[z[0]] = words[z[0]] + 1
+            words_k = words.keys()
+            words_k.sort(key = lambda x : -1 * words[x])
+            words_k = words_k[:5]
+            b = ""
+            for z in words_k:
+                if len(z)>=3:
+                    b = b + z + " "
+            print b
             add_to_database_text(b, fn)
     write_db()
 
 
 if __name__ == '__main__':
-    load_db()
-    st = raw_input()
-    while(st != '*'):
-        print query_database_text(st)
-        st = raw_input()
+    index_clusters()
+    #load_db()
+    #st = raw_input()
+    #while(st != '*'):
+    #    print query_database_text(st)
+    #    st = raw_input()
 
 
 
