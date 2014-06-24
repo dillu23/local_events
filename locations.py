@@ -4,11 +4,15 @@ from collections import Counter
 import os
 import json
 import nltk
-
+import re
 _dbase = {}
 
+def subprocess_call(db, place):
+    return subprocess.check_output(['java','-classpath','jars/*:.', 'SearchFiles',db, place])
+
 def search_index(place_id):
-    y = subprocess.check_output(['java', 'SearchFiles','index/index', place_id])
+    #y = subprocess.check_output(['java','-classpath','"jars/*":.', 'SearchFiles','index/index', place_id])
+    y = subprocess_call('index/index', place_id)
     if len(y) <=1:
         return
     y = y.split('\n')[0].split('\t')
@@ -24,7 +28,8 @@ def get_locations(text):
         st = st + " " + x[0]
 
     #print st
-    y = subprocess.check_output(['java', 'SearchFiles','index/countries', st])
+    #y = subprocess.check_output(['java','-classpath','"jars/*":.', 'SearchFiles','index/countries', st])
+    y = subprocess_call('index/countries', st)
     y = y.split('\n')
     countries = []
     y = y[:3]
@@ -33,7 +38,8 @@ def get_locations(text):
         if len(x) >6:
             countries.append([x[4], x[len(x)-3], x[len(x)-2]])
 
-    y = subprocess.check_output(['java', 'SearchFiles','index/states', st])
+    #y = subprocess.check_output(['java','-classpath','"jars/*":.', 'SearchFiles','index/states', st])
+    y = subprocess_call('index/states', st)
     states = []
     y = y.split('\n')
     y = y[:3]
@@ -46,7 +52,8 @@ def get_locations(text):
 #    for x in y:
 #        print x
 
-    y = subprocess.check_output(['java', 'SearchFiles','index/substates', st])
+    #y = subprocess.check_output(['java','-classpath','"jars/*":.', 'SearchFiles','index/substates', st])
+    y = subprocess_call('index/substates', st)
     y = y.split('\n')
     y = y[:3]
     substates = []
@@ -59,7 +66,8 @@ def get_locations(text):
             substates.append([x[2], x[len(x)-3], x[len(x)-2]])
 
 
-    y = subprocess.check_output(['java', 'SearchFiles','index/cities', st])
+    #y = subprocess.check_output(['java','-classpath','"jars/*":.', 'SearchFiles','index/cities', st])
+    y = subprocess_call('index/cities', st)
     y = y.split('\n')
     cities = []
     for x in y:
@@ -71,7 +79,8 @@ def get_locations(text):
 
 def get_most_relevant_place(st):
     psb = {}
-    y = subprocess.check_output(['java', 'SearchFiles','index/countries', st])
+    #y = subprocess.check_output(['java','-classpath','"jars/*":.', 'SearchFiles','index/countries', st])
+    y = subprocess_call('index/countries', st)
     y = y.split('\n')
     y = y[0]
     y = y.split('\t')
@@ -79,7 +88,8 @@ def get_most_relevant_place(st):
         psb[y[4] + '1'] = [y[len(y)-1], [y[len(y)-3], y[len(y)-2]]]
         return [y[4], psb[y[4] + '1']]
 
-    y = subprocess.check_output(['java', 'SearchFiles','index/states', st])
+    #y = subprocess.check_output(['java','-classpath','"jars/*":.', 'SearchFiles','index/states', st])
+    y = subprocess_call('index/states', st)
     y = y.split('\n')
     y = y[0]
     y = y.split('\t')
@@ -87,7 +97,8 @@ def get_most_relevant_place(st):
         psb[y[2] + '2'] = [y[len(y)-1], [y[len(y)-3], y[len(y)-2]]]
         return [y[2], psb[y[2] + '2']]
 
-    y = subprocess.check_output(['java', 'SearchFiles','index/substates', st])
+    #y = subprocess.check_output(['java','-classpath','"jars/*":.', 'SearchFiles','index/substates', st])
+    y = subprocess_call('index/substates', st)
     y = y.split('\n')
     y = y[0]
     y = y.split('\t')
@@ -95,7 +106,8 @@ def get_most_relevant_place(st):
         psb[y[2] + '3'] = [y[len(y)-1], [y[len(y)-3], y[len(y)-2]]]
         return [y[2], psb[y[2] + '3']]
 
-    y = subprocess.check_output(['java', 'SearchFiles','index/cities', st])
+    #y = subprocess.check_output(['java','-classpath','"jars/*":.', 'SearchFiles','index/cities', st])
+    y = subprocess_call('index/cities', st)
     y = y.split('\n')
     y = y[0]
     y = y.split('\t')
@@ -178,6 +190,7 @@ def write_db():
     f.close()
 
 def load_db():
+    global _dbase
     f = open('db.txt')
     a = f.readline()
     _dbase = json.loads(a)
@@ -185,10 +198,10 @@ def load_db():
 
 
 def index_clusters():
-    for r,d,f2 in os.walk('clusters3'):
+    for r,d,f2 in os.walk('clusters'):
         for fn in f2:
             print fn
-            f = open('clusters3/' + fn)
+            f = open('clusters/' + fn)
             a = f.readlines()
             a  = a[:30]
             words = {}
@@ -206,6 +219,7 @@ def index_clusters():
             b = ""
             for z in words_k:
                 if len(z)>=3:
+                    z  = re.sub('[^0-9a-zA-Z]+', ' ', z)
                     b = b + z + " "
             print b
             add_to_database_text(b, fn)
@@ -213,12 +227,13 @@ def index_clusters():
 
 
 if __name__ == '__main__':
-    index_clusters()
-    #load_db()
-    #st = raw_input()
-    #while(st != '*'):
-    #    print query_database_text(st)
-    #    st = raw_input()
+    #index_clusters()
+    load_db()
+    #print _dbase
+    st = raw_input()
+    while(st != '*'):
+        print query_database_text(st)
+        st = raw_input()
 
 
 
